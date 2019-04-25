@@ -1,16 +1,12 @@
 pipeline {
-  agent {
-    kubernetes {
-      label 'nodejs-app-pod-2'
-      yamlFile 'nodejs-pod.yaml'
-    }
-  }
+  agent none
   options {
     buildDiscarder(logRotator(numToKeepStr: '2'))
     skipDefaultCheckout true
   }
   stages {
     stage('Test') {
+      agent { label 'nodejs-app' }
       steps {
         checkout scm
         container('nodejs') {
@@ -26,6 +22,23 @@ pipeline {
       }
       steps {
         echo "TODO - build and push image"
+      }
+    }
+    stage('Deploy') {
+      when {
+        beforeAgent true
+        branch 'master'
+      }
+      options {
+        timeout(time: 60, unit: 'SECONDS')
+      }
+      input {
+        message "Should we deploy?"
+        submitter "johnasexton"
+        submitterParameter "APPROVER"
+      }
+      steps {
+        echo "Continuing with deployment - approved by ${APPROVER}"
       }
     }
   }
